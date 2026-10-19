@@ -58,7 +58,7 @@ func startWithClock(t *testing.T, state room.State, clock *fakeClock) channelSin
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
-	r := Start(ctx, Config{ID: 7, State: state, Rev: 1, Store: &fakeStore{}, Clock: clock})
+	r := Start(ctx, Config{ID: 7, State: state, Rev: 1, Store: &fakeStore{}, Queues: &fakeQueues{}, Clock: clock})
 	updates := make(channelSink, 8)
 
 	if _, _, err := r.Attach(ctx, updates); err != nil {
@@ -105,7 +105,7 @@ func TestARestoredRoomWithNobodyConnectedStillMovesOn(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	Start(ctx, Config{ID: 7, State: playingRoom(200 * time.Second), Rev: 1, Store: store, Clock: clock})
+	Start(ctx, Config{ID: 7, State: playingRoom(200 * time.Second), Rev: 1, Store: store, Queues: &fakeQueues{}, Clock: clock})
 
 	clock.awaitWaiter(t)
 	clock.Advance(202 * time.Second)

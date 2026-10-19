@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/akkamaze/tutti/internal/account"
 	"github.com/akkamaze/tutti/internal/room"
 )
 
@@ -16,6 +17,11 @@ type Rev int64
 // when the saved rev is no longer prev, which means another process owns the room.
 type Store interface {
 	Commit(ctx context.Context, id room.ID, prev Rev, next room.State, facts []room.Fact) error
+}
+
+// Queues reads the first song in a DJ's queue. The queue belongs to the account, not the room.
+type Queues interface {
+	Head(ctx context.Context, dj account.ID) (room.Track, bool, error)
 }
 
 var (

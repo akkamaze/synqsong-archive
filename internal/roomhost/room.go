@@ -15,11 +15,12 @@ import (
 const minWake = time.Second
 
 type Config struct {
-	ID    room.ID
-	State room.State
-	Rev   Rev
-	Store Store
-	Clock Clock
+	ID     room.ID
+	State  room.State
+	Rev    Rev
+	Store  Store
+	Queues Queues
+	Clock  Clock
 }
 
 // Room is a handle to one running room. All its methods are safe to call from any goroutine.
@@ -38,10 +39,17 @@ type actor struct {
 	fenced bool
 	// wake fires when the room next needs a Tick; nil when nothing is due.
 	wake <-chan time.Time
+	// lookupFailed: the queue could not be read for the DJ in Choosing; retry on wake.
+	lookupFailed bool
 }
 
 // Start runs the room until ctx ends or another process takes it over.
+// Store, Queues and Clock are required.
 func Start(ctx context.Context, cfg Config) *Room {
+	if cfg.Store == nil || cfg.Queues == nil || cfg.Clock == nil {
+		panic("roomhost.Start: Config needs Store, Queues and Clock")
+	}
+
 	r := &Room{inbox: make(chan func(*actor)), done: make(chan struct{})}
 	a := &actor{ctx: ctx, cfg: cfg, state: cfg.State, rev: cfg.Rev, sinks: map[Sink]struct{}{}}
 
@@ -53,6 +61,7 @@ func Start(ctx context.Context, cfg Config) *Room {
 func (a *actor) run(r *Room) {
 	defer close(r.done)
 
+	a.choose()
 	a.rearm()
 
 	for !a.fenced {
@@ -67,11 +76,43 @@ func (a *actor) run(r *Room) {
 			return
 		}
 
+		a.choose()
 		a.rearm()
 	}
 }
 
+// choose answers Choosing with the DJ's first song until the stage settles,
+// as td-fm's playHead read the songs table. A failed read is retried on the next wake.
+func (a *actor) choose() {
+	a.lookupFailed = false
+
+	for !a.fenced {
+		c, ok := a.state.Phase.(room.Choosing)
+		if !ok {
+			return
+		}
+
+		track, found, err := a.cfg.Queues.Head(a.ctx, c.DJ)
+		if err != nil {
+			a.lookupFailed = true
+
+			return
+		}
+
+		before := a.rev
+		if err := a.apply(room.TrackChosen{DJ: c.DJ, Track: track, Found: found}); err != nil || a.rev == before {
+			return
+		}
+	}
+}
+
 func (a *actor) rearm() {
+	if a.lookupFailed {
+		a.wake = a.cfg.Clock.After(minWake)
+
+		return
+	}
+
 	deadline, ok := room.NextDeadline(a.state)
 	if !ok {
 		a.wake = nil
