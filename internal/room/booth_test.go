@@ -133,3 +133,17 @@ func TestRotatePastNeverDropsTheHead(t *testing.T) {
 
 	assertOrder(t, b, bob, ann)
 }
+
+func TestBoothOfRebuildsASavedBooth(t *testing.T) {
+	b := BoothOf([]account.ID{ann, bob}, true)
+
+	assertOrder(t, b, ann, bob)
+
+	if !b.HeadLeaving() {
+		t.Fatal("rebuilt booth lost the head's leaving mark")
+	}
+
+	if BoothOf(nil, true).HeadLeaving() {
+		t.Fatal("an empty booth claims its head is leaving")
+	}
+}

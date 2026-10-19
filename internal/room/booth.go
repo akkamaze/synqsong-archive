@@ -14,6 +14,11 @@ type Booth struct {
 	headLeaving bool
 }
 
+// BoothOf rebuilds a saved booth: DJs in turn order, and whether the head leaves after their song.
+func BoothOf(djs []account.ID, headLeaving bool) Booth {
+	return Booth{order: slices.Clone(djs), headLeaving: headLeaving && len(djs) > 0}
+}
+
 func (b Booth) DJs() []account.ID {
 	return slices.Clone(b.order)
 }
