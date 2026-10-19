@@ -15,3 +15,6 @@ node_modules/
 .idea/
 .vscode/
 .DS_Store
+
+# Local Postgres data
+/.data/
