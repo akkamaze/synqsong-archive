@@ -163,6 +163,16 @@ func (r *Room) Attach(ctx context.Context, sink Sink) (Update, func(), error) {
 	return snapshot, detach, nil
 }
 
+func (r *Room) stopped() bool {
+	select {
+	case <-r.done:
+		return true
+
+	default:
+		return false
+	}
+}
+
 func (r *Room) call(ctx context.Context, job func(*actor)) error {
 	select {
 	case r.inbox <- job:
