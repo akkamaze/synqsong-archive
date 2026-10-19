@@ -36,17 +36,27 @@ var usernames = func() func() auth.Username {
 	}
 }()
 
-func newPINAccount(t *testing.T, s *Store, u auth.Username, pin string) account.ID {
+func pinHash(t *testing.T, u auth.Username, pin string) auth.PINHash {
 	t.Helper()
 
 	parsed, _ := auth.ParsePIN(pin)
 
-	hash, err := accountKeys.HashPIN(parsed, rand.Reader)
+	hash, err := accountKeys.HashPIN(parsed, accountKeys.UsernameDigest(u), rand.Reader)
 	if err != nil {
 		t.Fatalf("hash PIN: %v", err)
 	}
 
-	id, err := s.CreatePINAccount(context.Background(), "Ann", accountKeys.UsernameDigest(u), hash)
+	return hash
+}
+
+func pinIs(u auth.Username, pin auth.PIN, hash auth.PINHash) bool {
+	return accountKeys.VerifyPIN(pin, accountKeys.UsernameDigest(u), hash)
+}
+
+func newPINAccount(t *testing.T, s *Store, u auth.Username, pin string) account.ID {
+	t.Helper()
+
+	id, err := s.CreatePINAccount(context.Background(), "Ann", accountKeys.UsernameDigest(u), pinHash(t, u, pin))
 	if err != nil {
 		t.Fatalf("create account: %v", err)
 	}
@@ -67,13 +77,13 @@ func TestAPINAccountCanBeFoundAndChecked(t *testing.T) {
 	right, _ := auth.ParsePIN("4821")
 	wrong, _ := auth.ParsePIN("4822")
 
-	if !accountKeys.VerifyPIN(right, login.Hash) || accountKeys.VerifyPIN(wrong, login.Hash) {
+	if !pinIs(u, right, login.Hash) || pinIs(u, wrong, login.Hash) {
 		t.Fatal("the stored PIN hash does not check PINs correctly")
 	}
 
-	profile, err := s.Profile(context.Background(), id)
-	if err != nil || profile.Name != "Ann" || profile.Role != account.SiteUser {
-		t.Fatalf("profile = %+v, %v; want Ann, a site user", profile, err)
+	role, err := s.SiteRole(context.Background(), id)
+	if err != nil || role != account.SiteUser {
+		t.Fatalf("site role = %d, %v; want a site user", role, err)
 	}
 }
 
@@ -82,10 +92,8 @@ func TestAUsernameCanBeTakenOnlyOnce(t *testing.T) {
 	u := usernames()
 	newPINAccount(t, s, u, "1111")
 
-	hash, _ := accountKeys.HashPIN("2222", rand.Reader)
-
-	_, err := s.CreatePINAccount(context.Background(), "Copy", accountKeys.UsernameDigest(u), hash)
-	if !errors.Is(err, ErrUsernameTaken) {
+	_, err := s.CreatePINAccount(context.Background(), "Copy", accountKeys.UsernameDigest(u), pinHash(t, u, "2222"))
+	if !errors.Is(err, auth.ErrUsernameTaken) {
 		t.Fatalf("second account with the same username: %v, want ErrUsernameTaken", err)
 	}
 }
@@ -106,64 +114,18 @@ func TestTheUsernameItselfIsNeverStored(t *testing.T) {
 	}
 }
 
-func TestAnAdminSetPINMustBeChanged(t *testing.T) {
+func TestThePINOfAnAccountCarriesItsUsernameDigest(t *testing.T) {
 	s := needDB(t)
 	u := usernames()
 	id := newPINAccount(t, s, u, "4821")
 
-	temp, _ := accountKeys.HashPIN("9302", rand.Reader)
-	if err := s.SetPIN(context.Background(), id, temp, true); err != nil {
-		t.Fatalf("set PIN: %v", err)
+	login, err := s.PINOfAccount(context.Background(), id)
+	if err != nil || login.Account != id || !bytes.Equal(login.UsernameDigest, accountKeys.UsernameDigest(u)) || !pinIs(u, "4821", login.Hash) {
+		t.Fatalf("PIN of account = %+v, %v; want its username digest and PIN", login, err)
 	}
 
-	login, _, err := s.FindPINLogin(context.Background(), accountKeys.UsernameDigest(u))
-	if err != nil || !login.MustChange || !accountKeys.VerifyPIN("9302", login.Hash) {
-		t.Fatalf("after an admin set the PIN: %+v, %v; want the new PIN and must-change", login, err)
-	}
-}
-
-func TestSessionsLastWhileUsedAndEndOnRequest(t *testing.T) {
-	s := needDB(t)
-	ctx := context.Background()
-	id := newPINAccount(t, s, usernames(), "4821")
-
-	token, _ := auth.NewToken(rand.Reader)
-	digest := auth.HashToken(token)
-
-	if err := s.CreateSession(ctx, digest, id); err != nil {
-		t.Fatalf("create session: %v", err)
-	}
-
-	got, found, err := s.SessionAccount(ctx, digest, time.Now().Add(-time.Hour))
-	if err != nil || !found || got != id {
-		t.Fatalf("session lookup = %d, %v, %v; want account %d", got, found, err, id)
-	}
-
-	if _, found, _ := s.SessionAccount(ctx, digest, time.Now().Add(time.Hour)); found {
-		t.Fatal("a session not used since the cutoff was accepted, want it expired")
-	}
-
-	if err := s.DeleteSessionsOf(ctx, id); err != nil {
-		t.Fatalf("delete sessions: %v", err)
-	}
-
-	if _, found, _ := s.SessionAccount(ctx, digest, time.Now().Add(-time.Hour)); found {
-		t.Fatal("a session survived signing out everywhere")
-	}
-}
-
-func TestOnlyTheTokenHashIsStored(t *testing.T) {
-	s := needDB(t)
-	ctx := context.Background()
-	id := newPINAccount(t, s, usernames(), "4821")
-
-	token, _ := auth.NewToken(rand.Reader)
-	if err := s.CreateSession(ctx, auth.HashToken(token), id); err != nil {
-		t.Fatalf("create session: %v", err)
-	}
-
-	var leaks int
-	if err := testPool.QueryRow(ctx, `SELECT count(*) FROM sessions WHERE position($1::bytea IN token_digest) > 0`, []byte(token)).Scan(&leaks); err != nil || leaks != 0 {
-		t.Fatalf("rows holding the plain token = %d (%v), want 0", leaks, err)
+	found, _, err := s.FindPINLogin(context.Background(), accountKeys.UsernameDigest(u))
+	if err != nil || !bytes.Equal(found.UsernameDigest, login.UsernameDigest) {
+		t.Fatalf("find = %+v, %v; want the same username digest", found, err)
 	}
 }

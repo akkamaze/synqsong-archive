@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 
 	"golang.org/x/crypto/scrypt"
 )
@@ -45,13 +46,14 @@ func allASCIIDigits(s string) bool {
 	return s != ""
 }
 
-// PINHash is what is stored: the salt text and HMAC(key, scrypt(pin, salt)).
+// PINHash is what is stored: the salt text and HMAC(key, username digest || scrypt(pin, salt)).
+// The username digest binds the hash to its login, so it cannot be copied onto another.
 type PINHash struct {
 	Salt   string
 	Digest []byte
 }
 
-func (k Keys) HashPIN(pin PIN, random io.Reader) (PINHash, error) {
+func (k Keys) HashPIN(pin PIN, usernameDigest []byte, random io.Reader) (PINHash, error) {
 	raw := make([]byte, saltBytes)
 	if _, err := io.ReadFull(random, raw); err != nil {
 		return PINHash{}, fmt.Errorf("make PIN salt: %w", err)
@@ -64,26 +66,31 @@ func (k Keys) HashPIN(pin PIN, random io.Reader) (PINHash, error) {
 		return PINHash{}, err
 	}
 
-	return PINHash{Salt: salt, Digest: mac(k.pin, derived)}, nil
+	return PINHash{Salt: salt, Digest: k.pinDigest(usernameDigest, derived)}, nil
 }
 
-func (k Keys) VerifyPIN(pin PIN, stored PINHash) bool {
+func (k Keys) VerifyPIN(pin PIN, usernameDigest []byte, stored PINHash) bool {
 	derived, err := scryptPIN(pin, stored.Salt)
 	if err != nil {
 		return false
 	}
 
-	return hmac.Equal(mac(k.pin, derived), stored.Digest)
+	return hmac.Equal(k.pinDigest(usernameDigest, derived), stored.Digest)
 }
 
 // ImportLegacyPIN wraps a legacy hash (hex scrypt output and its salt text) so the user keeps their PIN.
-func (k Keys) ImportLegacyPIN(salt, hashHex string) (PINHash, error) {
+func (k Keys) ImportLegacyPIN(usernameDigest []byte, salt, hashHex string) (PINHash, error) {
 	derived, err := hex.DecodeString(hashHex)
 	if err != nil || len(derived) != scryptKeyLen {
 		return PINHash{}, errors.New("legacy PIN hash: expected 128 hex characters")
 	}
 
-	return PINHash{Salt: salt, Digest: mac(k.pin, derived)}, nil
+	return PINHash{Salt: salt, Digest: k.pinDigest(usernameDigest, derived)}, nil
+}
+
+// A username digest is always 32 bytes, so joining it to the scrypt output is unambiguous.
+func (k Keys) pinDigest(usernameDigest, derived []byte) []byte {
+	return mac(k.pin, slices.Concat(usernameDigest, derived))
 }
 
 // The salt's hex text, not its bytes, goes to scrypt; this keeps legacy hashes valid.
