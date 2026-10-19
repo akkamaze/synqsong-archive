@@ -10,3 +10,7 @@ make check
 ```
 
 Runs golangci-lint and `go test -race ./...`. Needs Go 1.26.
+
+## License
+
+All rights reserved. See [LICENSE](LICENSE).
