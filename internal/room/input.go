@@ -37,10 +37,16 @@ type Disconnected struct {
 	SignOut bool
 }
 
+// Admit makes someone a member after they entered the room's passcode.
+type Admit struct {
+	Who account.ID
+}
+
 func (Request) isInput()      {}
 func (TrackChosen) isInput()  {}
 func (Connected) isInput()    {}
 func (Disconnected) isInput() {}
+func (Admit) isInput()        {}
 
 // Command is what a person asks the room to do.
 //
@@ -83,11 +89,33 @@ type VoteSkip struct {
 	Token PlayToken
 }
 
-func (StepUp) isCommand()        {}
-func (StepDown) isCommand()      {}
-func (KickFromBooth) isCommand() {}
-func (Loaded) isCommand()        {}
-func (Ended) isCommand()         {}
-func (Unplayable) isCommand()    {}
-func (Skip) isCommand()          {}
-func (VoteSkip) isCommand()      {}
+type Say struct {
+	Body ChatBody
+}
+
+// RemoveFromRoom takes a member out of the room and keeps them out.
+type RemoveFromRoom struct {
+	Who account.ID
+}
+
+type AssignRole struct {
+	Who  account.ID
+	Role Role
+}
+
+type ChangeSettings struct {
+	Settings Settings
+}
+
+func (StepUp) isCommand()         {}
+func (Say) isCommand()            {}
+func (RemoveFromRoom) isCommand() {}
+func (AssignRole) isCommand()     {}
+func (ChangeSettings) isCommand() {}
+func (StepDown) isCommand()       {}
+func (KickFromBooth) isCommand()  {}
+func (Loaded) isCommand()         {}
+func (Ended) isCommand()          {}
+func (Unplayable) isCommand()     {}
+func (Skip) isCommand()           {}
+func (VoteSkip) isCommand()       {}

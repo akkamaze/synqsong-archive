@@ -23,6 +23,9 @@ func Apply(s State, in Input, now time.Time) (State, []Fact, error) {
 		next, facts := disconnected(s, in, now)
 
 		return next, facts, nil
+
+	case Admit:
+		return admit(s, in)
 	}
 
 	return s, nil, nil
@@ -60,6 +63,18 @@ func applyRequest(s State, req Request, now time.Time) (State, []Fact, error) {
 
 	case VoteSkip:
 		return voteSkip(s, req.By, role, cmd, now)
+
+	case Say:
+		return say(s, req.By, role, cmd, now)
+
+	case RemoveFromRoom:
+		return removeFromRoom(s, req.By, role, cmd, now)
+
+	case AssignRole:
+		return assignRole(s, role, cmd)
+
+	case ChangeSettings:
+		return changeSettings(s, role, cmd)
 	}
 
 	return s, nil, nil

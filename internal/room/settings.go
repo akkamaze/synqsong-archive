@@ -34,6 +34,18 @@ func (v SkipVotes) VotesNeeded(eligible int) int {
 	return max(needed, 1)
 }
 
+func (s Settings) validate() error {
+	if s.Skip != SkipByDJs && s.Skip != SkipByEveryone {
+		return invalid("skip policy", "choose DJs only or everyone")
+	}
+
+	if _, err := ParseSkipVotes(int(s.SkipVotes)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func DefaultSettings() Settings {
 	return Settings{Skip: SkipByDJs, SkipVotes: DefaultSkipVotes}
 }

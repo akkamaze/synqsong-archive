@@ -1,6 +1,10 @@
 package room
 
-import "time"
+import (
+	"time"
+
+	"github.com/akkamaze/tutti/internal/account"
+)
 
 // Fact is something Apply decided that the state alone does not record.
 //
@@ -19,8 +23,22 @@ type LengthLearned struct {
 	Duration time.Duration
 }
 
+// Said is a chat line to keep forever.
+type Said struct {
+	By   account.ID
+	Body ChatBody
+	At   time.Time
+}
+
+// Removed tells the runtime to close the member's connections and their membership.
+type Removed struct {
+	Who account.ID
+}
+
 func (Finished) isFact()      {}
 func (LengthLearned) isFact() {}
+func (Said) isFact()          {}
+func (Removed) isFact()       {}
 
 type EndReason int8
 
