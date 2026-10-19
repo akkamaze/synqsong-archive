@@ -24,8 +24,23 @@ type TrackChosen struct {
 	Found bool
 }
 
-func (Request) isInput()     {}
-func (TrackChosen) isInput() {}
+// Connected: one more connection from this member opened.
+type Connected struct {
+	Who account.ID
+}
+
+// Disconnected: one of this member's connections closed. Goodbye means the
+// page said it was leaving; SignOut means they pressed Leave.
+type Disconnected struct {
+	Who     account.ID
+	Goodbye bool
+	SignOut bool
+}
+
+func (Request) isInput()      {}
+func (TrackChosen) isInput()  {}
+func (Connected) isInput()    {}
+func (Disconnected) isInput() {}
 
 // Command is what a person asks the room to do.
 //

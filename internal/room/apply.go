@@ -3,6 +3,8 @@ package room
 import (
 	"slices"
 	"time"
+
+	"github.com/akkamaze/tutti/internal/account"
 )
 
 // Apply applies one input to a room. It never changes s; on refusal it returns s unchanged.
@@ -13,6 +15,14 @@ func Apply(s State, in Input, now time.Time) (State, []Fact, error) {
 
 	case TrackChosen:
 		return chooseTrack(s, in, now), nil, nil
+
+	case Connected:
+		return connected(s, in, now)
+
+	case Disconnected:
+		next, facts := disconnected(s, in, now)
+
+		return next, facts, nil
 	}
 
 	return s, nil, nil
@@ -26,13 +36,15 @@ func applyRequest(s State, req Request, now time.Time) (State, []Fact, error) {
 
 	switch cmd := req.Cmd.(type) {
 	case StepUp:
-		return guard(s, role, ActionJoinBooth, func() (State, []Fact) { return stepUp(s, req) })
+		return guard(s, role, ActionJoinBooth, func() (State, []Fact) { return stepUp(s, req, now) })
 
 	case StepDown:
-		return stepDown(s, req), nil, nil
+		next, facts := stepDown(s, req, now)
+
+		return next, facts, nil
 
 	case KickFromBooth:
-		return guard(s, role, ActionKickFromBooth, func() (State, []Fact) { return removeFromBooth(s, cmd.DJ) })
+		return guard(s, role, ActionKickFromBooth, func() (State, []Fact) { return removeFromBooth(s, cmd.DJ, now) })
 
 	case Loaded:
 		return loaded(s, role, cmd)
@@ -41,13 +53,13 @@ func applyRequest(s State, req Request, now time.Time) (State, []Fact, error) {
 		return ended(s, role, cmd, now)
 
 	case Unplayable:
-		return unplayable(s, req.By, role, cmd)
+		return unplayable(s, req.By, role, cmd, now)
 
 	case Skip:
-		return skip(s, req.By, role, cmd)
+		return skip(s, req.By, role, cmd, now)
 
 	case VoteSkip:
-		return voteSkip(s, req.By, role, cmd)
+		return voteSkip(s, req.By, role, cmd, now)
 	}
 
 	return s, nil, nil
@@ -63,8 +75,8 @@ func guard(s State, role Role, action Action, apply func() (State, []Fact)) (Sta
 	return next, facts, nil
 }
 
-// beginTurn looks for the head DJ's song, or idles when the booth is empty.
-func beginTurn(s State) State {
+// beginTurn gives the stage to the head DJ, or idles when the booth is empty.
+func beginTurn(s State, now time.Time) State {
 	head, ok := s.Booth.Head()
 	if !ok {
 		s.Phase = Idle{}
@@ -72,7 +84,18 @@ func beginTurn(s State) State {
 		return s
 	}
 
-	s.Phase = Choosing{DJ: head}
+	return turnFor(s, head, 0, now)
+}
+
+// turnFor starts a DJ's turn. An asleep DJ rests on stage instead, as in td-fm's playHead.
+func turnFor(s State, dj account.ID, passed int, now time.Time) State {
+	if isAsleep(s, dj) {
+		s.Phase = startRest(dj, RestOffline, now)
+
+		return s
+	}
+
+	s.Phase = Choosing{DJ: dj, Passed: passed}
 
 	return s
 }
@@ -84,7 +107,7 @@ func chooseTrack(s State, in TrackChosen, now time.Time) State {
 	}
 
 	if !in.Found {
-		return passEmptyQueue(s, c)
+		return passEmptyQueue(s, c, now)
 	}
 
 	if slices.Contains(c.Failed, in.Track.Item) {
@@ -103,7 +126,7 @@ func chooseTrack(s State, in TrackChosen, now time.Time) State {
 }
 
 // passEmptyQueue rotates past a DJ with no songs, and idles once every DJ was tried.
-func passEmptyQueue(s State, c Choosing) State {
+func passEmptyQueue(s State, c Choosing, now time.Time) State {
 	s.Booth = s.Booth.RotatePast()
 	passed := c.Passed + 1
 
@@ -114,7 +137,6 @@ func passEmptyQueue(s State, c Choosing) State {
 	}
 
 	head, _ := s.Booth.Head()
-	s.Phase = Choosing{DJ: head, Passed: passed}
 
-	return s
+	return turnFor(s, head, passed, now)
 }

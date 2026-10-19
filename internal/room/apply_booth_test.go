@@ -23,6 +23,11 @@ func roomWith(djs ...account.ID) State {
 	}
 	s.Roles[guest] = RoleGuest
 
+	s.Presence = map[account.ID]Presence{}
+	for _, id := range []account.ID{owner, ann, bob, cat} {
+		s.Presence[id] = Here{Conns: 1}
+	}
+
 	for _, dj := range djs {
 		s.Booth = s.Booth.StepUp(dj)
 	}

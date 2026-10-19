@@ -1,42 +1,45 @@
 package room
 
-import "github.com/akkamaze/tutti/internal/account"
+import (
+	"time"
 
-func stepUp(s State, req Request) (State, []Fact) {
+	"github.com/akkamaze/tutti/internal/account"
+)
+
+func stepUp(s State, req Request, now time.Time) (State, []Fact) {
 	s.Booth = s.Booth.StepUp(req.By)
 
 	if _, idle := s.Phase.(Idle); idle {
-		return beginTurn(s), nil
+		return beginTurn(s, now), nil
 	}
 
 	return s, nil
 }
 
-func stepDown(s State, req Request) State {
+func stepDown(s State, req Request, now time.Time) (State, []Fact) {
 	if !s.Booth.Has(req.By) {
-		return s
+		return s, nil
 	}
 
 	if dj, ok := playingDJ(s); ok && dj == req.By {
 		s.Booth = s.Booth.StepDown(req.By, true)
 
-		return s
+		return s, nil
 	}
 
-	next, _ := removeFromBooth(s, req.By)
-
-	return next
+	return removeFromBooth(s, req.By, now)
 }
 
 // removeFromBooth takes a DJ out at once. A song they were playing counts as
 // finished, and a turn they were holding passes to the next DJ, as in td-fm.
-func removeFromBooth(s State, dj account.ID) (State, []Fact) {
+func removeFromBooth(s State, dj account.ID, now time.Time) (State, []Fact) {
 	if !s.Booth.Has(dj) {
 		return s, nil
 	}
 
 	wasHead := s.Booth.isHead(dj)
 	s.Booth = s.Booth.Remove(dj)
+	s = sweepIfGone(s, dj)
 
 	if !wasHead {
 		return s, nil
@@ -51,7 +54,7 @@ func removeFromBooth(s State, dj account.ID) (State, []Fact) {
 		return s, facts
 	}
 
-	return beginTurn(s), facts
+	return beginTurn(s, now), facts
 }
 
 func playingDJ(s State) (account.ID, bool) {

@@ -60,16 +60,23 @@ func ended(s State, role Role, cmd Ended, now time.Time) (State, []Fact, error) 
 		return s, nil, err
 	}
 
-	next, facts := endTurn(s, p, EndFinished)
+	next, facts := endTurn(s, p, EndFinished, now)
 
 	return next, facts, nil
 }
 
 // unplayable keeps the DJ's turn: they try their next song, as in td-fm's retryCurrentDj.
-func unplayable(s State, by account.ID, role Role, cmd Unplayable) (State, []Fact, error) {
+// With the DJ asleep nobody else would report, so listeners may, and the turn passes on.
+func unplayable(s State, by account.ID, role Role, cmd Unplayable, now time.Time) (State, []Fact, error) {
 	p, err := reportedPlay(s, role, cmd.Token, cmd.Video)
 	if err != nil {
 		return s, nil, err
+	}
+
+	if isAsleep(s, p.Play.DJ) {
+		next, facts := endTurn(s, p, EndUnplayable, now)
+
+		return next, facts, nil
 	}
 
 	if by != p.Play.DJ {
@@ -81,7 +88,7 @@ func unplayable(s State, by account.ID, role Role, cmd Unplayable) (State, []Fac
 	return s, []Fact{Finished{Play: p.Play, Reason: EndUnplayable}}, nil
 }
 
-func skip(s State, by account.ID, role Role, cmd Skip) (State, []Fact, error) {
+func skip(s State, by account.ID, role Role, cmd Skip, now time.Time) (State, []Fact, error) {
 	p, err := currentPlay(s)
 	if err != nil {
 		return s, nil, err
@@ -96,12 +103,12 @@ func skip(s State, by account.ID, role Role, cmd Skip) (State, []Fact, error) {
 		return s, nil, ErrNotAllowed
 	}
 
-	next, facts := endTurn(s, p, EndSkipped)
+	next, facts := endTurn(s, p, EndSkipped, now)
 
 	return next, facts, nil
 }
 
-func voteSkip(s State, by account.ID, role Role, cmd VoteSkip) (State, []Fact, error) {
+func voteSkip(s State, by account.ID, role Role, cmd VoteSkip, now time.Time) (State, []Fact, error) {
 	if !Can(role, s.Settings, ActionVoteSkip) {
 		return s, nil, ErrNotAllowed
 	}
@@ -126,7 +133,7 @@ func voteSkip(s State, by account.ID, role Role, cmd VoteSkip) (State, []Fact, e
 	p.Votes = append(slices.Clone(p.Votes), by)
 
 	if len(p.Votes) >= s.Settings.SkipVotes.VotesNeeded(eligibleVoters(s, p.Play.DJ)) {
-		next, facts := endTurn(s, p, EndVotedOut)
+		next, facts := endTurn(s, p, EndVotedOut, now)
 
 		return next, facts, nil
 	}
@@ -136,11 +143,11 @@ func voteSkip(s State, by account.ID, role Role, cmd VoteSkip) (State, []Fact, e
 	return s, nil, nil
 }
 
-// eligibleVoters counts members other than the playing DJ. Guests never vote.
+// eligibleVoters counts connected members other than the playing DJ. Guests never vote.
 func eligibleVoters(s State, dj account.ID) int {
 	n := 0
 	for id, role := range s.Roles {
-		if id != dj && role.atLeast(RoleMember) {
+		if id != dj && role.atLeast(RoleMember) && isHere(s, id) {
 			n++
 		}
 	}
@@ -148,9 +155,11 @@ func eligibleVoters(s State, dj account.ID) int {
 	return n
 }
 
-// endTurn finishes the play and hands the stage to the next DJ, as in td-fm's endAndRotate.
-func endTurn(s State, p Playing, reason EndReason) (State, []Fact) {
-	s.Booth = s.Booth.FinishTurn(false)
+// endTurn finishes the play and hands the stage to the next DJ, as in td-fm's
+// endAndRotate. An asleep DJ's set ends here instead of going round again.
+func endTurn(s State, p Playing, reason EndReason, now time.Time) (State, []Fact) {
+	s.Booth = s.Booth.FinishTurn(isAsleep(s, p.Play.DJ))
+	s = sweepIfGone(s, p.Play.DJ)
 
-	return beginTurn(s), []Fact{Finished{Play: p.Play, Reason: reason}}
+	return beginTurn(s, now), []Fact{Finished{Play: p.Play, Reason: reason}}
 }
