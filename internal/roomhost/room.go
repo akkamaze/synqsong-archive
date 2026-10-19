@@ -224,7 +224,9 @@ func (a *actor) apply(in room.Input) error {
 
 	update := Update{Rev: a.rev, State: next, Facts: facts}
 	for sink := range a.sinks {
-		sink.Send(update)
+		if !sink.Send(update) {
+			delete(a.sinks, sink)
+		}
 	}
 
 	return nil

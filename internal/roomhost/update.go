@@ -10,7 +10,8 @@ type Update struct {
 	Facts []room.Fact
 }
 
-// Sink receives a room's updates in order. Send is called from the room's goroutine.
+// Sink receives a room's updates in order. Send is called from the room's goroutine
+// and must not block; returning false means the sink fell behind and the room drops it.
 type Sink interface {
-	Send(Update)
+	Send(Update) bool
 }

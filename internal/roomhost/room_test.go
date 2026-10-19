@@ -59,11 +59,13 @@ type recordingSink struct {
 	updates []Update
 }
 
-func (r *recordingSink) Send(u Update) {
+func (r *recordingSink) Send(u Update) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	r.updates = append(r.updates, u)
+
+	return true
 }
 
 func (r *recordingSink) received() []Update {

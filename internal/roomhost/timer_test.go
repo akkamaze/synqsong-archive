@@ -11,7 +11,11 @@ import (
 // channelSink hands each update to the test as it arrives.
 type channelSink chan Update
 
-func (c channelSink) Send(u Update) { c <- u }
+func (c channelSink) Send(u Update) bool {
+	c <- u
+
+	return true
+}
 
 func expectUpdate(t *testing.T, updates channelSink) Update {
 	t.Helper()
