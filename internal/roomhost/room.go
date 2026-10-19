@@ -39,6 +39,8 @@ type actor struct {
 	fenced bool
 	// wake fires when the room next needs a Tick; nil when nothing is due.
 	wake <-chan time.Time
+	// wakeFor is the deadline wake was armed for, so an input that keeps it keeps the timer.
+	wakeFor time.Time
 	// lookupFailed: the queue could not be read for the DJ in Choosing; retry on wake.
 	lookupFailed bool
 }
@@ -70,6 +72,7 @@ func (a *actor) run(r *Room) {
 			job(a)
 
 		case <-a.wake:
+			a.wake = nil
 			_ = a.apply(room.Tick{})
 
 		case <-a.ctx.Done():
@@ -108,19 +111,23 @@ func (a *actor) choose() {
 
 func (a *actor) rearm() {
 	if a.lookupFailed {
-		a.wake = a.cfg.Clock.After(minWake)
+		a.wake, a.wakeFor = a.cfg.Clock.After(minWake), time.Time{}
 
 		return
 	}
 
 	deadline, ok := room.NextDeadline(a.state)
 	if !ok {
-		a.wake = nil
+		a.wake, a.wakeFor = nil, time.Time{}
 
 		return
 	}
 
-	a.wake = a.cfg.Clock.After(max(deadline.Sub(a.cfg.Clock.Now()), minWake))
+	if a.wake != nil && deadline.Equal(a.wakeFor) {
+		return
+	}
+
+	a.wake, a.wakeFor = a.cfg.Clock.After(max(deadline.Sub(a.cfg.Clock.Now()), minWake)), deadline
 }
 
 // Do applies one input and returns once it is saved and sent, or why it was refused.

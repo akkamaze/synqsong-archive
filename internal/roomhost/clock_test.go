@@ -15,6 +15,7 @@ type fakeClock struct {
 	mu      sync.Mutex
 	now     time.Time
 	waiters []waiter
+	armed   int
 }
 
 func newFakeClock(now time.Time) *fakeClock {
@@ -34,8 +35,17 @@ func (c *fakeClock) After(d time.Duration) <-chan time.Time {
 
 	ch := make(chan time.Time, 1)
 	c.waiters = append(c.waiters, waiter{at: c.now.Add(d), ch: ch})
+	c.armed++
 
 	return ch
+}
+
+// timersArmed counts every After call so far.
+func (c *fakeClock) timersArmed() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return c.armed
 }
 
 // awaitWaiter blocks until someone is waiting on the clock, so Advance cannot race the room arming its timer.
