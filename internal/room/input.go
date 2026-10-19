@@ -46,7 +46,12 @@ func (Request) isInput()      {}
 func (TrackChosen) isInput()  {}
 func (Connected) isInput()    {}
 func (Disconnected) isInput() {}
-func (Admit) isInput()        {}
+
+// Tick lets time pass: rests end, fallbacks fire and away members are counted out.
+type Tick struct{}
+
+func (Admit) isInput() {}
+func (Tick) isInput()  {}
 
 // Command is what a person asks the room to do.
 //

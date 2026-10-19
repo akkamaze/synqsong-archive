@@ -26,6 +26,11 @@ func Apply(s State, in Input, now time.Time) (State, []Fact, error) {
 
 	case Admit:
 		return admit(s, in)
+
+	case Tick:
+		next, facts := tick(s, now)
+
+		return next, facts, nil
 	}
 
 	return s, nil, nil

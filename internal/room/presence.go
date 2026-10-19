@@ -2,6 +2,9 @@ package room
 
 import "time"
 
+// awayGrace is how long a member who went quiet keeps their place, td-fm's OFFLINE_GRACE_MS.
+const awayGrace = 15 * time.Minute
+
 // Presence is whether a member is in the room right now. Exactly one of Here, Away or Asleep.
 //
 //sumtype:decl
