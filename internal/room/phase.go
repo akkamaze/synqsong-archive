@@ -10,7 +10,7 @@ import (
 // td-fm used 10s; the owner chose 3s.
 const restLength = 3 * time.Second
 
-// Phase is what the stage is doing. Exactly one of Idle, Playing or Resting.
+// Phase is what the stage is doing. Exactly one of Idle, Choosing, Playing or Resting.
 //
 //sumtype:decl
 type Phase interface{ isPhase() }
@@ -18,8 +18,18 @@ type Phase interface{ isPhase() }
 // Idle means nobody in the booth has a song to play.
 type Idle struct{}
 
+// Choosing waits for the head DJ's next track from their queue.
+type Choosing struct {
+	DJ account.ID
+	// Failed lists this DJ's songs that would not play in this turn.
+	Failed []QueueItemID
+	// Passed counts DJs rotated past for having no songs during this search.
+	Passed int
+}
+
 type Playing struct {
-	Play Play
+	Play   Play
+	Failed []QueueItemID
 }
 
 // Resting shows a DJ on stage who cannot take their turn, before they leave the booth.
@@ -29,9 +39,10 @@ type Resting struct {
 	Until  time.Time
 }
 
-func (Idle) isPhase()    {}
-func (Playing) isPhase() {}
-func (Resting) isPhase() {}
+func (Idle) isPhase()     {}
+func (Choosing) isPhase() {}
+func (Playing) isPhase()  {}
+func (Resting) isPhase()  {}
 
 type RestReason int8
 
