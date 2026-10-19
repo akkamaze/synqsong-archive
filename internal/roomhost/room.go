@@ -209,7 +209,7 @@ func (a *actor) apply(in room.Input) error {
 		return nil
 	}
 
-	if err := a.cfg.Store.Commit(a.ctx, a.cfg.ID, a.rev, next, facts); err != nil {
+	if err := a.cfg.Store.Commit(a.ctx, a.cfg.ID, a.rev, a.state, next, facts); err != nil {
 		if errors.Is(err, ErrFenced) {
 			a.fenced = true
 

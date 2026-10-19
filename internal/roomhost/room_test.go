@@ -34,7 +34,7 @@ func (f *fakeStore) Load(_ context.Context, _ room.ID) (room.State, Rev, error) 
 	return room.NewState(owner), 1, nil
 }
 
-func (f *fakeStore) Commit(_ context.Context, _ room.ID, prev Rev, next room.State, facts []room.Fact) error {
+func (f *fakeStore) Commit(_ context.Context, _ room.ID, prev Rev, _, next room.State, facts []room.Fact) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 

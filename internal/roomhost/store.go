@@ -13,12 +13,12 @@ import (
 // Rev counts a room's saved changes. A commit names the rev it builds on.
 type Rev int64
 
-// Store keeps rooms. Load reads a room as last saved. Commit saves one change in
-// one transaction, and returns ErrFenced when the saved rev is no longer prev,
-// which means another process owns the room.
+// Store keeps rooms. Load reads a room as last saved. Commit saves the change from
+// before to next in one transaction, and returns ErrFenced when the saved rev is no
+// longer prev, which means another process owns the room.
 type Store interface {
 	Load(ctx context.Context, id room.ID) (room.State, Rev, error)
-	Commit(ctx context.Context, id room.ID, prev Rev, next room.State, facts []room.Fact) error
+	Commit(ctx context.Context, id room.ID, prev Rev, before, next room.State, facts []room.Fact) error
 }
 
 // Queues reads the first song in a DJ's queue. The queue belongs to the account, not the room.
