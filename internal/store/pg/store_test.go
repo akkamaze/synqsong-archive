@@ -23,6 +23,11 @@ var testPool *pgxpool.Pool
 func TestMain(m *testing.M) {
 	appURL, ownerURL := os.Getenv("TEST_DATABASE_URL"), os.Getenv("TEST_MIGRATION_DATABASE_URL")
 	if appURL == "" || ownerURL == "" {
+		if os.Getenv("REQUIRE_TEST_DATABASE") == "1" {
+			fmt.Println("pg: REQUIRE_TEST_DATABASE=1 but TEST_DATABASE_URL or TEST_MIGRATION_DATABASE_URL is not set")
+			os.Exit(1)
+		}
+
 		fmt.Println("pg: TEST_DATABASE_URL and TEST_MIGRATION_DATABASE_URL not set, skipping database tests")
 		os.Exit(m.Run())
 	}
