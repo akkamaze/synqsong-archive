@@ -17,13 +17,16 @@ import (
 var ErrVideoNotFound = errors.New("that video was not found on YouTube; it may be private or removed")
 
 // Client looks videos up on YouTube. With an API key it uses the Data API, which gives the
-// length; without a key, or when the Data API fails, it uses oEmbed, and the length stays unknown.
+// length, and keeps each answer for a while to save quota; without a key, or when the Data API
+// fails, it uses oEmbed, and the length stays unknown.
 type Client struct {
 	key           string
 	http          *http.Client
 	apiBase       string
 	oembedBase    string
 	reportFailure func(error)
+	cache         *videoCache
+	now           func() time.Time
 }
 
 type Option func(*Client)
@@ -46,6 +49,8 @@ func NewClient(key string, opts ...Option) *Client {
 		apiBase:       "https://www.googleapis.com/youtube/v3",
 		oembedBase:    "https://www.youtube.com",
 		reportFailure: func(error) {},
+		cache:         newVideoCache(videoCacheSize),
+		now:           time.Now,
 	}
 
 	for _, opt := range opts {
@@ -60,8 +65,20 @@ func (c *Client) LookUp(ctx context.Context, id room.VideoID) (Video, error) {
 		return c.lookUpOEmbed(ctx, id)
 	}
 
+	if v, ok := c.cache.get(id, c.now()); ok {
+		return v, nil
+	}
+
 	v, err := c.lookUpAPI(ctx, id)
-	if err == nil || errors.Is(err, ErrVideoNotFound) || ctx.Err() != nil {
+	if err == nil {
+		if !v.Live {
+			c.cache.put(v, c.now())
+		}
+
+		return v, nil
+	}
+
+	if errors.Is(err, ErrVideoNotFound) || ctx.Err() != nil {
 		return v, err
 	}
 
