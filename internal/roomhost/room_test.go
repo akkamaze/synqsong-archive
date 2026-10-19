@@ -78,7 +78,7 @@ func startRoom(t *testing.T, store Store) *Room {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
-	return Start(ctx, Config{ID: 7, State: state, Rev: 1, Store: store, Now: func() time.Time { return t0 }})
+	return Start(ctx, Config{ID: 7, State: state, Rev: 1, Store: store, Clock: newFakeClock(t0)})
 }
 
 func TestDoCommitsThenBroadcasts(t *testing.T) {
@@ -218,7 +218,7 @@ func TestConcurrentInputsAreAppliedOneAtATime(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	r := Start(ctx, Config{ID: 7, State: state, Rev: 1, Store: store, Now: func() time.Time { return t0 }})
+	r := Start(ctx, Config{ID: 7, State: state, Rev: 1, Store: store, Clock: newFakeClock(t0)})
 
 	var wg sync.WaitGroup
 	for i := range people {

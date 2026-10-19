@@ -10,12 +10,16 @@ import (
 	"github.com/akkamaze/tutti/internal/room"
 )
 
+// minWake keeps the timer at least this far ahead, as td-fm's armFallback did,
+// so a deadline already past when it is learned fires a beat later, not at once.
+const minWake = time.Second
+
 type Config struct {
 	ID    room.ID
 	State room.State
 	Rev   Rev
 	Store Store
-	Now   func() time.Time
+	Clock Clock
 }
 
 // Room is a handle to one running room. All its methods are safe to call from any goroutine.
@@ -32,6 +36,8 @@ type actor struct {
 	rev    Rev
 	sinks  map[Sink]struct{}
 	fenced bool
+	// wake fires when the room next needs a Tick; nil when nothing is due.
+	wake <-chan time.Time
 }
 
 // Start runs the room until ctx ends or another process takes it over.
@@ -47,15 +53,33 @@ func Start(ctx context.Context, cfg Config) *Room {
 func (a *actor) run(r *Room) {
 	defer close(r.done)
 
+	a.rearm()
+
 	for !a.fenced {
 		select {
 		case job := <-r.inbox:
 			job(a)
 
+		case <-a.wake:
+			_ = a.apply(room.Tick{})
+
 		case <-a.ctx.Done():
 			return
 		}
+
+		a.rearm()
 	}
+}
+
+func (a *actor) rearm() {
+	deadline, ok := room.NextDeadline(a.state)
+	if !ok {
+		a.wake = nil
+
+		return
+	}
+
+	a.wake = a.cfg.Clock.After(max(deadline.Sub(a.cfg.Clock.Now()), minWake))
 }
 
 // Do applies one input and returns once it is saved and sent, or why it was refused.
@@ -125,7 +149,7 @@ func wait[T any](ctx context.Context, reply <-chan T) (T, error) {
 
 // apply saves a change before anyone sees it. A failed save keeps the old state.
 func (a *actor) apply(in room.Input) error {
-	next, facts, err := room.Apply(a.state, in, a.cfg.Now())
+	next, facts, err := room.Apply(a.state, in, a.cfg.Clock.Now())
 	if err != nil {
 		return err
 	}
