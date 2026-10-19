@@ -14,7 +14,6 @@ const (
 )
 
 // UnplayableGrace is how long browsers wait on a broken video before reporting it.
-// td-fm waited 10s for the first failure in a turn; the owner chose 3s for every one.
 const UnplayableGrace = 3 * time.Second
 
 // PlayToken is the play's start time in Unix milliseconds. It also tells apart

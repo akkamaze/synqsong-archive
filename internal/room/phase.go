@@ -7,7 +7,6 @@ import (
 )
 
 // restLength is how long a DJ who cannot play stays on stage saying goodbye.
-// td-fm used 10s; the owner chose 3s.
 const restLength = 3 * time.Second
 
 // Phase is what the stage is doing. Exactly one of Idle, Choosing, Playing or Resting.

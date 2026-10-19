@@ -84,7 +84,7 @@ func TestFallbackAt(t *testing.T) {
 
 func TestUnplayableGraceIsThreeSeconds(t *testing.T) {
 	if UnplayableGrace != 3*time.Second {
-		t.Fatalf("unplayable grace = %v, want 3s for every failure (owner's change from td-fm's 10s/3s)", UnplayableGrace)
+		t.Fatalf("unplayable grace = %v, want 3s for every failure", UnplayableGrace)
 	}
 }
 
@@ -92,6 +92,6 @@ func TestRestLastsThreeSeconds(t *testing.T) {
 	rest := startRest(7, RestOffline, t0)
 
 	if !rest.Until.Equal(t0.Add(3 * time.Second)) {
-		t.Fatalf("rest until = %v, want 3s after it starts (owner's change from td-fm's 10s)", rest.Until)
+		t.Fatalf("rest until = %v, want 3s after it starts", rest.Until)
 	}
 }
