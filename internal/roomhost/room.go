@@ -1,0 +1,156 @@
+package roomhost
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"reflect"
+	"time"
+
+	"github.com/akkamaze/tutti/internal/room"
+)
+
+type Config struct {
+	ID    room.ID
+	State room.State
+	Rev   Rev
+	Store Store
+	Now   func() time.Time
+}
+
+// Room is a handle to one running room. All its methods are safe to call from any goroutine.
+type Room struct {
+	inbox chan func(*actor)
+	done  chan struct{}
+}
+
+// actor owns a room's state. Only its goroutine touches these fields.
+type actor struct {
+	ctx    context.Context
+	cfg    Config
+	state  room.State
+	rev    Rev
+	sinks  map[Sink]struct{}
+	fenced bool
+}
+
+// Start runs the room until ctx ends or another process takes it over.
+func Start(ctx context.Context, cfg Config) *Room {
+	r := &Room{inbox: make(chan func(*actor)), done: make(chan struct{})}
+	a := &actor{ctx: ctx, cfg: cfg, state: cfg.State, rev: cfg.Rev, sinks: map[Sink]struct{}{}}
+
+	go a.run(r)
+
+	return r
+}
+
+func (a *actor) run(r *Room) {
+	defer close(r.done)
+
+	for !a.fenced {
+		select {
+		case job := <-r.inbox:
+			job(a)
+
+		case <-a.ctx.Done():
+			return
+		}
+	}
+}
+
+// Do applies one input and returns once it is saved and sent, or why it was refused.
+func (r *Room) Do(ctx context.Context, in room.Input) error {
+	reply := make(chan error, 1)
+
+	if err := r.call(ctx, func(a *actor) { reply <- a.apply(in) }); err != nil {
+		return err
+	}
+
+	result, err := wait(ctx, reply)
+	if err != nil {
+		return err
+	}
+
+	return result
+}
+
+// Attach returns the room as it is now and sends every later update to sink until detached.
+func (r *Room) Attach(ctx context.Context, sink Sink) (Update, func(), error) {
+	reply := make(chan Update, 1)
+
+	err := r.call(ctx, func(a *actor) {
+		a.sinks[sink] = struct{}{}
+		reply <- Update{Rev: a.rev, State: a.state}
+	})
+	if err != nil {
+		return Update{}, func() {}, err
+	}
+
+	snapshot, err := wait(ctx, reply)
+	if err != nil {
+		return Update{}, func() {}, err
+	}
+
+	detach := func() {
+		_ = r.call(context.Background(), func(a *actor) { delete(a.sinks, sink) })
+	}
+
+	return snapshot, detach, nil
+}
+
+func (r *Room) call(ctx context.Context, job func(*actor)) error {
+	select {
+	case r.inbox <- job:
+		return nil
+
+	case <-r.done:
+		return ErrClosed
+
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+func wait[T any](ctx context.Context, reply <-chan T) (T, error) {
+	select {
+	case v := <-reply:
+		return v, nil
+
+	case <-ctx.Done():
+		var zero T
+
+		return zero, ctx.Err()
+	}
+}
+
+// apply saves a change before anyone sees it. A failed save keeps the old state.
+func (a *actor) apply(in room.Input) error {
+	next, facts, err := room.Apply(a.state, in, a.cfg.Now())
+	if err != nil {
+		return err
+	}
+
+	if len(facts) == 0 && reflect.DeepEqual(next, a.state) {
+		return nil
+	}
+
+	if err := a.cfg.Store.Commit(a.ctx, a.cfg.ID, a.rev, next, facts); err != nil {
+		if errors.Is(err, ErrFenced) {
+			a.fenced = true
+
+			return ErrFenced
+		}
+
+		return fmt.Errorf("%w: %w", ErrUnavailable, err)
+	}
+
+	a.state = next
+	a.rev++
+
+	update := Update{Rev: a.rev, State: next, Facts: facts}
+	for sink := range a.sinks {
+		sink.Send(update)
+	}
+
+	return nil
+}
