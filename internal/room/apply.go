@@ -4,7 +4,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/akkamaze/tutti/internal/account"
+	"github.com/akkamaze/synqsong/internal/account"
 )
 
 // Apply applies one input to a room. It never changes s; on refusal it returns s unchanged.

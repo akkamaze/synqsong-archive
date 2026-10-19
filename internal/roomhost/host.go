@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/akkamaze/tutti/internal/room"
+	"github.com/akkamaze/synqsong/internal/room"
 )
 
 type HostConfig struct {

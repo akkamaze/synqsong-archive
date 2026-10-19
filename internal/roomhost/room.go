@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/akkamaze/tutti/internal/room"
+	"github.com/akkamaze/synqsong/internal/room"
 )
 
 // minWake keeps the timer at least this far ahead, as td-fm's armFallback did,

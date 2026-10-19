@@ -1,4 +1,4 @@
-// Package account names the people who use Tutti.
+// Package account names the people who use SynqSong.
 package account
 
 // ID identifies one account.

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/akkamaze/tutti/internal/account"
-	"github.com/akkamaze/tutti/internal/room"
+	"github.com/akkamaze/synqsong/internal/account"
+	"github.com/akkamaze/synqsong/internal/room"
 )
 
 const bob account.ID = 3

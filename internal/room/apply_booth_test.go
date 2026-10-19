@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/akkamaze/tutti/internal/account"
+	"github.com/akkamaze/synqsong/internal/account"
 )
 
 const (

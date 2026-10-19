@@ -6,8 +6,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/akkamaze/tutti/internal/account"
-	"github.com/akkamaze/tutti/internal/room"
+	"github.com/akkamaze/synqsong/internal/account"
+	"github.com/akkamaze/synqsong/internal/room"
 )
 
 // Rev counts a room's saved changes. A commit names the rev it builds on.

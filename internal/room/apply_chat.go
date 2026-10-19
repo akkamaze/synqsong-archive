@@ -4,7 +4,7 @@ import (
 	"maps"
 	"time"
 
-	"github.com/akkamaze/tutti/internal/account"
+	"github.com/akkamaze/synqsong/internal/account"
 )
 
 // Same floor as td-fm's CHAT_THROTTLE_MS, kept per member instead of per socket.

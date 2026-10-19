@@ -4,7 +4,7 @@ import (
 	"maps"
 	"time"
 
-	"github.com/akkamaze/tutti/internal/account"
+	"github.com/akkamaze/synqsong/internal/account"
 )
 
 func connected(s State, in Connected, now time.Time) (State, []Fact, error) {

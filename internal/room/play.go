@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/akkamaze/tutti/internal/account"
+	"github.com/akkamaze/synqsong/internal/account"
 )
 
 // Timings carried over from td-fm's room engine (server/src/room.js).

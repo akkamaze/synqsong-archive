@@ -3,7 +3,7 @@ package room
 import (
 	"time"
 
-	"github.com/akkamaze/tutti/internal/account"
+	"github.com/akkamaze/synqsong/internal/account"
 )
 
 // State is the whole truth about one running room.

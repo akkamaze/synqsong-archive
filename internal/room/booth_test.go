@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/akkamaze/tutti/internal/account"
+	"github.com/akkamaze/synqsong/internal/account"
 )
 
 const (
