@@ -7,6 +7,7 @@ const (
 	ActionChat Action = iota + 1
 	ActionJoinBooth
 	ActionSkipOwnSong
+	ActionVoteSkip
 	ActionSkipSong
 	ActionKickFromBooth
 	ActionRemoveFromRoom

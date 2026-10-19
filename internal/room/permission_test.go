@@ -6,14 +6,15 @@ type allowed struct {
 	member, dj, owner bool
 }
 
-// The permission table the owner agreed on 2026-10-19, written out per skip policy.
+// The permission table the owner agreed on 2026-10-19 (revised: only the owner kicks, vote skip, guests).
 var permissionTable = map[SkipPolicy]map[Action]allowed{
 	SkipByDJs: {
 		ActionChat:           {member: true, dj: true, owner: true},
 		ActionJoinBooth:      {member: true, dj: true, owner: true},
 		ActionSkipOwnSong:    {member: true, dj: true, owner: true},
+		ActionVoteSkip:       {member: true, dj: true, owner: true},
 		ActionSkipSong:       {member: false, dj: true, owner: true},
-		ActionKickFromBooth:  {member: false, dj: true, owner: true},
+		ActionKickFromBooth:  {owner: true},
 		ActionRemoveFromRoom: {owner: true},
 		ActionChangePasscode: {owner: true},
 		ActionAssignRole:     {owner: true},
@@ -24,8 +25,9 @@ var permissionTable = map[SkipPolicy]map[Action]allowed{
 		ActionChat:           {member: true, dj: true, owner: true},
 		ActionJoinBooth:      {member: true, dj: true, owner: true},
 		ActionSkipOwnSong:    {member: true, dj: true, owner: true},
+		ActionVoteSkip:       {member: true, dj: true, owner: true},
 		ActionSkipSong:       {member: true, dj: true, owner: true},
-		ActionKickFromBooth:  {member: false, dj: true, owner: true},
+		ActionKickFromBooth:  {owner: true},
 		ActionRemoveFromRoom: {owner: true},
 		ActionChangePasscode: {owner: true},
 		ActionAssignRole:     {owner: true},
@@ -36,7 +38,7 @@ var permissionTable = map[SkipPolicy]map[Action]allowed{
 
 func TestCanMatchesAgreedTable(t *testing.T) {
 	for policy, actions := range permissionTable {
-		settings := Settings{Skip: policy}
+		settings := Settings{Skip: policy, SkipVotes: DefaultSkipVotes}
 
 		for action := ActionChat; action <= ActionDeleteRoom; action++ {
 			want, listed := actions[action]
@@ -60,6 +62,16 @@ func TestCanMatchesAgreedTable(t *testing.T) {
 func TestDefaultSettingsLetOnlyDJsSkip(t *testing.T) {
 	if Can(RoleMember, DefaultSettings(), ActionSkipSong) {
 		t.Fatal("a member can skip others' songs under default settings, want only DJs and the owner")
+	}
+}
+
+func TestGuestsOnlyListen(t *testing.T) {
+	everyone := Settings{Skip: SkipByEveryone, SkipVotes: DefaultSkipVotes}
+
+	for action := ActionChat; action <= ActionDeleteRoom; action++ {
+		if Can(RoleGuest, everyone, action) {
+			t.Errorf("Can(guest, action %d) = true, want guests to only listen", action)
+		}
 	}
 }
 

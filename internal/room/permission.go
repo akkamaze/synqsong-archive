@@ -7,16 +7,13 @@ func Can(role Role, settings Settings, action Action) bool {
 	}
 
 	switch action {
-	case ActionChat, ActionJoinBooth, ActionSkipOwnSong:
+	case ActionChat, ActionJoinBooth, ActionSkipOwnSong, ActionVoteSkip:
 		return true
 
 	case ActionSkipSong:
 		return role.atLeast(RoleDJ) || settings.Skip == SkipByEveryone
 
-	case ActionKickFromBooth:
-		return role.atLeast(RoleDJ)
-
-	case ActionRemoveFromRoom, ActionChangePasscode, ActionAssignRole, ActionChangeSettings, ActionDeleteRoom:
+	case ActionKickFromBooth, ActionRemoveFromRoom, ActionChangePasscode, ActionAssignRole, ActionChangeSettings, ActionDeleteRoom:
 		return role == RoleOwner
 	}
 
