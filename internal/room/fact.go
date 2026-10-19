@@ -1,5 +1,7 @@
 package room
 
+import "time"
+
 // Fact is something Apply decided that the state alone does not record.
 //
 //sumtype:decl
@@ -11,7 +13,14 @@ type Finished struct {
 	Reason EndReason
 }
 
-func (Finished) isFact() {}
+// LengthLearned remembers a song's length so its next play can arm the fallback at once.
+type LengthLearned struct {
+	Item     QueueItemID
+	Duration time.Duration
+}
+
+func (Finished) isFact()      {}
+func (LengthLearned) isFact() {}
 
 type EndReason int8
 

@@ -33,6 +33,21 @@ func applyRequest(s State, req Request, now time.Time) (State, []Fact, error) {
 
 	case KickFromBooth:
 		return guard(s, role, ActionKickFromBooth, func() (State, []Fact) { return removeFromBooth(s, cmd.DJ) })
+
+	case Loaded:
+		return loaded(s, role, cmd)
+
+	case Ended:
+		return ended(s, role, cmd, now)
+
+	case Unplayable:
+		return unplayable(s, req.By, role, cmd)
+
+	case Skip:
+		return skip(s, req.By, role, cmd)
+
+	case VoteSkip:
+		return voteSkip(s, req.By, role, cmd)
 	}
 
 	return s, nil, nil

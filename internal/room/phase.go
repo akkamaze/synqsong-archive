@@ -30,6 +30,8 @@ type Choosing struct {
 type Playing struct {
 	Play   Play
 	Failed []QueueItemID
+	// Votes are the listeners who voted to skip this play, once each.
+	Votes []account.ID
 }
 
 // Resting shows a DJ on stage who cannot take their turn, before they leave the booth.
