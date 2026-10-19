@@ -7,8 +7,8 @@ import (
 )
 
 // Restored prepares a room loaded after a restart. Nobody is connected yet, so
-// every DJ in the booth is away since the room was last saved, as td-fm counted
-// restored DJs' grace from when the server was last alive. Without this, a DJ
+// every DJ in the booth is away since the room was last saved, so their grace counts
+// from when the server was last alive. Without this, a DJ
 // who left during the downtime would still get their turn.
 func Restored(s State, savedAt time.Time) State {
 	s.Presence = map[account.ID]Presence{}

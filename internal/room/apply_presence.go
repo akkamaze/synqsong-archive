@@ -49,7 +49,7 @@ func disconnected(s State, in Disconnected, now time.Time) (State, []Fact) {
 	return markGone(s, in.Who, in.SignOut, now)
 }
 
-// markGone counts someone out, as td-fm's markGone. A DJ keeps their slot asleep;
+// markGone counts someone out. A DJ keeps their slot asleep;
 // signing out gives up an on-deck slot at once; a listener just leaves.
 func markGone(s State, who account.ID, signOut bool, now time.Time) (State, []Fact) {
 	if !s.Booth.Has(who) {

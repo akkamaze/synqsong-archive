@@ -10,7 +10,7 @@ import (
 	"synqsong/internal/room"
 )
 
-// minWake keeps the timer at least this far ahead, as td-fm's armFallback did,
+// minWake keeps the timer at least this far ahead,
 // so a deadline already past when it is learned fires a beat later, not at once.
 const minWake = time.Second
 
@@ -81,8 +81,8 @@ func (a *actor) run(r *Room) {
 	}
 }
 
-// choose answers Choosing with the DJ's first song until the stage settles,
-// as td-fm's playHead read the songs table. A failed read is retried on the next wake.
+// choose answers Choosing with the DJ's first song until the stage settles.
+// A failed read is retried on the next wake.
 func (a *actor) choose() {
 	a.lookupFailed = false
 

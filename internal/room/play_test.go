@@ -78,7 +78,7 @@ func TestFallbackAt(t *testing.T) {
 	}
 
 	if _, ok := playOf(0).FallbackAt(); ok {
-		t.Fatal("fallback armed without a known length, want none as in td-fm")
+		t.Fatal("fallback armed without a known length, want none")
 	}
 }
 

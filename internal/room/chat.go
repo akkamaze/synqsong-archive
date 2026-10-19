@@ -6,7 +6,7 @@ import (
 	"unicode/utf8"
 )
 
-// Same cap as td-fm's CHAT_MAX_LEN.
+// The longest chat message, in characters.
 const chatMaxRunes = 300
 
 // ChatBody is one chat line, trimmed, non-empty and free of control characters.

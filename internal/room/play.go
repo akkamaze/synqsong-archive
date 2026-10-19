@@ -7,7 +7,7 @@ import (
 	"synqsong/internal/account"
 )
 
-// Timings carried over from td-fm's room engine (server/src/room.js).
+// Playback timings.
 const (
 	endGrace      = 2 * time.Second
 	earlyEndSlack = 5 * time.Second
@@ -71,7 +71,7 @@ func (p Play) CheckEnded(now time.Time) error {
 }
 
 // FallbackAt is when the room moves on by itself if nobody reports the end.
-// Without a known length there is no fallback, as in td-fm.
+// Without a known length there is no fallback.
 func (p Play) FallbackAt() (time.Time, bool) {
 	length, known := p.Track.KnownDuration()
 	if !known {

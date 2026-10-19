@@ -31,7 +31,7 @@ func stepDown(s State, req Request, now time.Time) (State, []Fact) {
 }
 
 // removeFromBooth takes a DJ out at once. A song they were playing counts as
-// finished, and a turn they were holding passes to the next DJ, as in td-fm.
+// finished, and a turn they were holding passes to the next DJ.
 func removeFromBooth(s State, dj account.ID, now time.Time) (State, []Fact) {
 	if !s.Booth.Has(dj) {
 		return s, nil
