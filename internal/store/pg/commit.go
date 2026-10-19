@@ -9,9 +9,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/akkamaze/synqsong/internal/account"
-	"github.com/akkamaze/synqsong/internal/room"
-	"github.com/akkamaze/synqsong/internal/roomhost"
+	"synqsong/internal/account"
+	"synqsong/internal/room"
+	"synqsong/internal/roomhost"
 )
 
 // Commit saves the change from before to next and its facts in one transaction.

@@ -3,7 +3,7 @@ package room
 import (
 	"time"
 
-	"github.com/akkamaze/synqsong/internal/account"
+	"synqsong/internal/account"
 )
 
 // Restored prepares a room loaded after a restart. Nobody is connected yet, so

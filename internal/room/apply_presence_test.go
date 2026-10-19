@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/akkamaze/synqsong/internal/account"
+	"synqsong/internal/account"
 )
 
 func presenceOf(t *testing.T, s State, who account.ID) Presence {

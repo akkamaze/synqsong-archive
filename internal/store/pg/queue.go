@@ -8,8 +8,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/akkamaze/synqsong/internal/account"
-	"github.com/akkamaze/synqsong/internal/room"
+	"synqsong/internal/account"
+	"synqsong/internal/room"
 )
 
 // Head returns the first song in a DJ's queue, if they have one.

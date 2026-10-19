@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/akkamaze/synqsong/internal/room"
+	"synqsong/internal/room"
 )
 
 // channelSink hands each update to the test as it arrives.

@@ -8,8 +8,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/akkamaze/synqsong/internal/account"
-	"github.com/akkamaze/synqsong/internal/room"
+	"synqsong/internal/account"
+	"synqsong/internal/room"
 )
 
 // Phase codes in room_stage.phase; the table's CHECK allows exactly these.

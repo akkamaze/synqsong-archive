@@ -5,7 +5,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/akkamaze/synqsong/internal/account"
+	"synqsong/internal/account"
 )
 
 // tick counts out expired away members first, so a DJ who is gone as their song

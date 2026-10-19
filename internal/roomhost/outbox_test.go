@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/akkamaze/synqsong/internal/account"
-	"github.com/akkamaze/synqsong/internal/room"
+	"synqsong/internal/account"
+	"synqsong/internal/room"
 )
 
 func TestOutboxDropsItselfWhenFull(t *testing.T) {

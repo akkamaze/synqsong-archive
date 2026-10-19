@@ -4,7 +4,7 @@ import (
 	"maps"
 	"time"
 
-	"github.com/akkamaze/synqsong/internal/account"
+	"synqsong/internal/account"
 )
 
 func admit(s State, in Admit) (State, []Fact, error) {

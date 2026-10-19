@@ -3,7 +3,7 @@ package room
 import (
 	"time"
 
-	"github.com/akkamaze/synqsong/internal/account"
+	"synqsong/internal/account"
 )
 
 func stepUp(s State, req Request, now time.Time) (State, []Fact) {

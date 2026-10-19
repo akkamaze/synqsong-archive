@@ -10,9 +10,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/akkamaze/synqsong/internal/account"
-	"github.com/akkamaze/synqsong/internal/room"
-	"github.com/akkamaze/synqsong/internal/roomhost"
+	"synqsong/internal/account"
+	"synqsong/internal/room"
+	"synqsong/internal/roomhost"
 )
 
 // Store connects as the app role, which may change rooms and queues but only add to history and chat.

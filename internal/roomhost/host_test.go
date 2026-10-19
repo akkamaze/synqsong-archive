@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/akkamaze/synqsong/internal/room"
+	"synqsong/internal/room"
 )
 
 type loadingStore struct {

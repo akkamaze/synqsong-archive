@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/akkamaze/synqsong/internal/account"
-	"github.com/akkamaze/synqsong/internal/room"
-	"github.com/akkamaze/synqsong/internal/roomhost"
+	"synqsong/internal/account"
+	"synqsong/internal/room"
+	"synqsong/internal/roomhost"
 )
 
 var t0 = time.UnixMilli(1_790_000_000_000).UTC()

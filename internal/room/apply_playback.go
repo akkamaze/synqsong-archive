@@ -4,7 +4,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/akkamaze/synqsong/internal/account"
+	"synqsong/internal/account"
 )
 
 func currentPlay(s State) (Playing, error) {

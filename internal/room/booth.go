@@ -3,7 +3,7 @@ package room
 import (
 	"slices"
 
-	"github.com/akkamaze/synqsong/internal/account"
+	"synqsong/internal/account"
 )
 
 // Booth is the DJ rotation. The head is the DJ playing now or up next.

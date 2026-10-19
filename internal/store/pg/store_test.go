@@ -12,9 +12,9 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 
-	"github.com/akkamaze/synqsong/db"
-	"github.com/akkamaze/synqsong/internal/account"
-	"github.com/akkamaze/synqsong/internal/room"
+	"synqsong/db"
+	"synqsong/internal/account"
+	"synqsong/internal/room"
 )
 
 // testPool connects as the app role to a disposable database, or is nil when none is configured.

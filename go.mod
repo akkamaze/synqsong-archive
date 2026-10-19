@@ -1,4 +1,4 @@
-module github.com/akkamaze/synqsong
+module synqsong
 
 go 1.26.8
 
