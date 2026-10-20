@@ -49,13 +49,24 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// resetSchema rebuilds the test database from the migrations as the owner role.
+// resetSchema rebuilds the test database from the migrations as the owner role. Dropping the
+// schema first works whatever another branch last left in the shared database.
 func resetSchema(ownerURL string) error {
 	conn, err := sql.Open("pgx", ownerURL)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = conn.Close() }()
+
+	for _, stmt := range []string{
+		`DROP SCHEMA public CASCADE`,
+		`CREATE SCHEMA public`,
+		`GRANT USAGE ON SCHEMA public TO synqsong_app`,
+	} {
+		if _, err := conn.Exec(stmt); err != nil {
+			return fmt.Errorf("%s: %w", stmt, err)
+		}
+	}
 
 	goose.SetBaseFS(db.Migrations)
 	goose.SetLogger(goose.NopLogger())
@@ -64,7 +75,7 @@ func resetSchema(ownerURL string) error {
 		return err
 	}
 
-	// Up first so Reset finds goose's version table even in a brand-new database.
+	// Down and up again, so every migration's down path runs too.
 	for _, step := range []func(*sql.DB, string, ...goose.OptionsFunc) error{goose.Up, goose.Reset, goose.Up} {
 		if err := step(conn, "migrations"); err != nil {
 			return err
