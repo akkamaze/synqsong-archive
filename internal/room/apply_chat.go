@@ -7,7 +7,7 @@ import (
 	"synqsong/internal/account"
 )
 
-// Same floor as td-fm's CHAT_THROTTLE_MS, kept per member instead of per socket.
+// The least time between one member's messages, kept per member rather than per connection.
 const chatThrottle = 500 * time.Millisecond
 
 func say(s State, by account.ID, role Role, cmd Say, now time.Time) (State, []Fact, error) {

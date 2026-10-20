@@ -107,7 +107,7 @@ func beginTurn(s State, now time.Time) State {
 	return turnFor(s, head, 0, now)
 }
 
-// turnFor starts a DJ's turn. An asleep DJ rests on stage instead, as in td-fm's playHead.
+// turnFor starts a DJ's turn. An asleep DJ rests on stage instead.
 func turnFor(s State, dj account.ID, passed int, now time.Time) State {
 	if isAsleep(s, dj) {
 		s.Phase = startRest(dj, RestOffline, now)

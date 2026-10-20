@@ -2,7 +2,7 @@ package room
 
 import "time"
 
-// awayGrace is how long a member who went quiet keeps their place, td-fm's OFFLINE_GRACE_MS.
+// awayGrace is how long a member who went quiet keeps their place.
 const awayGrace = 15 * time.Minute
 
 // Presence is whether a member is in the room right now. Exactly one of Here, Away or Asleep.
@@ -20,7 +20,7 @@ type Away struct {
 	Since time.Time
 }
 
-// Asleep is gone but still holds a DJ slot, as td-fm's offlineSince.
+// Asleep is gone but still holds a DJ slot.
 type Asleep struct {
 	Since time.Time
 }

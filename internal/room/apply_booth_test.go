@@ -154,7 +154,7 @@ func TestOwnerKicksThePlayingDJ(t *testing.T) {
 
 	want := []Fact{Finished{Play: play, Reason: EndFinished}}
 	if !reflect.DeepEqual(facts, want) {
-		t.Fatalf("facts = %#v, want %#v (td-fm records a removed DJ's song as finished)", facts, want)
+		t.Fatalf("facts = %#v, want %#v (a removed DJ's song counts as finished)", facts, want)
 	}
 }
 

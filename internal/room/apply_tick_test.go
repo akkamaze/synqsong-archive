@@ -60,7 +60,7 @@ func TestTickNeverEndsASongOfUnknownLength(t *testing.T) {
 
 	next, facts := tickAt(t, s, t0.Add(24*time.Hour))
 	if !reflect.DeepEqual(next, s) || len(facts) != 0 {
-		t.Fatal("tick ended a song whose length is unknown, want it to wait for a report as td-fm does")
+		t.Fatal("tick ended a song whose length is unknown, want it to wait for a report")
 	}
 }
 

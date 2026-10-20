@@ -65,7 +65,7 @@ func ended(s State, role Role, cmd Ended, now time.Time) (State, []Fact, error) 
 	return next, facts, nil
 }
 
-// unplayable keeps the DJ's turn: they try their next song, as in td-fm's retryCurrentDj.
+// unplayable keeps the DJ's turn: they try their next song.
 // With the DJ asleep nobody else would report, so listeners may, and the turn passes on.
 func unplayable(s State, by account.ID, role Role, cmd Unplayable, now time.Time) (State, []Fact, error) {
 	p, err := reportedPlay(s, role, cmd.Token, cmd.Video)
@@ -155,8 +155,8 @@ func eligibleVoters(s State, dj account.ID) int {
 	return n
 }
 
-// endTurn finishes the play and hands the stage to the next DJ, as in td-fm's
-// endAndRotate. An asleep DJ's set ends here instead of going round again.
+// endTurn finishes the play and hands the stage to the next DJ.
+// An asleep DJ's set ends here instead of going round again.
 func endTurn(s State, p Playing, reason EndReason, now time.Time) (State, []Fact) {
 	s.Booth = s.Booth.FinishTurn(isAsleep(s, p.Play.DJ))
 	s = sweepIfGone(s, p.Play.DJ)
