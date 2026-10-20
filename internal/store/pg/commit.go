@@ -199,6 +199,10 @@ func finishPlay(ctx context.Context, tx pgx.Tx, id room.ID, f room.Finished) err
 		return fmt.Errorf("record play %d in room %d: %w", p.Token, id, err)
 	}
 
+	if err := lockQueue(ctx, tx, p.DJ); err != nil {
+		return err
+	}
+
 	_, err = tx.Exec(ctx, `
 		UPDATE queue_items
 		SET position = (SELECT max(position) + 1 FROM queue_items WHERE account_id = $2)
